@@ -2,7 +2,7 @@ package messaging
 
 import (
 	"github.com/IBM/sarama"
-	"github.com/vikasavnish/datapipe/pkg/connectors"
+	"github.com/ivikasavnish/datapipe/pkg/connectors"
 )
 
 type KafkaConnector struct {

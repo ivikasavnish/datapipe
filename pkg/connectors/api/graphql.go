@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+
+	"github.com/ivikasavnish/datapipe/pkg/connectors"
 )
 
 type GraphQLConnector struct {
-	BaseConnector
+	connectors.BaseConnector
 	Config  GraphQLConfig
 	client  *http.Client
 	headers map[string]string
@@ -48,7 +50,7 @@ type GraphQLErrorLocation struct {
 
 func NewGraphQLConnector(config GraphQLConfig) *GraphQLConnector {
 	return &GraphQLConnector{
-		BaseConnector: BaseConnector{
+		BaseConnector: connectors.BaseConnector{
 			Name:        "GraphQL",
 			Description: "GraphQL API connector",
 			Version:     "1.0.0",

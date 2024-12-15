@@ -2,12 +2,14 @@ package cloud
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/ivikasavnish/datapipe/pkg/connectors"
 )
 
 type S3Connector struct {
-	BaseConnector
+	connectors.BaseConnector
 	Config S3Config
 	client *s3.S3
 }
@@ -21,7 +23,7 @@ type S3Config struct {
 
 func NewS3Connector(config S3Config) *S3Connector {
 	return &S3Connector{
-		BaseConnector: BaseConnector{
+		BaseConnector: connectors.BaseConnector{
 			Name:        "AWS S3",
 			Description: "Amazon S3 storage connector",
 			Version:     "1.0.0",
@@ -43,7 +45,7 @@ func (s *S3Connector) Connect() error {
 	if err != nil {
 		return err
 	}
-	
+
 	s.client = s3.New(sess)
 	return nil
 }

@@ -6,11 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
+
+	"github.com/ivikasavnish/datapipe/pkg/connectors"
 )
 
 type FlinkConnector struct {
-	BaseConnector
+	connectors.BaseConnector
 	Config FlinkConfig
 	client *http.Client
 	ctx    context.Context
@@ -37,7 +40,7 @@ type FlinkJob struct {
 
 func NewFlinkConnector(config FlinkConfig) *FlinkConnector {
 	return &FlinkConnector{
-		BaseConnector: BaseConnector{
+		BaseConnector: connectors.BaseConnector{
 			Name:        "Apache Flink",
 			Description: "Apache Flink streaming connector",
 			Version:     "1.0.0",
@@ -52,18 +55,18 @@ func (f *FlinkConnector) Connect() error {
 	f.client = &http.Client{
 		Timeout: time.Second * 30,
 	}
-	
+
 	// Test connection to Flink JobManager
 	resp, err := f.client.Get(fmt.Sprintf("%s/overview", f.Config.JobManagerURL))
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed to connect to Flink JobManager: %s", resp.Status)
 	}
-	
+
 	return nil
 }
 
@@ -90,7 +93,7 @@ func (f *FlinkConnector) SubmitJob(jarPath string) (*FlinkJob, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Submit job
 	payload := map[string]interface{}{
 		"entryClass":    f.Config.EntryClass,
@@ -98,26 +101,26 @@ func (f *FlinkConnector) SubmitJob(jarPath string) (*FlinkJob, error) {
 		"programArgs":   f.Config.ProgramArgs,
 		"savepointPath": f.Config.SavepointDir,
 	}
-	
+
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	url := fmt.Sprintf("%s/jars/%s/run", f.Config.JobManagerURL, jarID)
 	resp, err := f.client.Post(url, "application/json", bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	
+
 	var result struct {
 		JobID string `json:"jobid"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, err
 	}
-	
+
 	return f.GetJobStatus(result.JobID)
 }
 
@@ -127,21 +130,21 @@ func (f *FlinkConnector) uploadJar(jarPath string) (string, error) {
 		return "", err
 	}
 	defer file.Close()
-	
+
 	url := fmt.Sprintf("%s/jars/upload", f.Config.JobManagerURL)
 	resp, err := f.client.Post(url, "application/x-java-archive", file)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
-	
+
 	var result struct {
 		Filename string `json:"filename"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return "", err
 	}
-	
+
 	return result.Filename, nil
 }
 
@@ -152,12 +155,12 @@ func (f *FlinkConnector) GetJobStatus(jobID string) (*FlinkJob, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	
+
 	var job FlinkJob
 	if err := json.NewDecoder(resp.Body).Decode(&job); err != nil {
 		return nil, err
 	}
-	
+
 	return &job, nil
 }
 
@@ -166,22 +169,22 @@ func (f *FlinkConnector) CancelJob(jobID string, withSavepoint bool) error {
 	if withSavepoint {
 		url = fmt.Sprintf("%s?targetDirectory=%s", url, f.Config.SavepointDir)
 	}
-	
+
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
 		return err
 	}
-	
+
 	resp, err := f.client.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed to cancel job %s: %s", jobID, resp.Status)
 	}
-	
+
 	return nil
 }
 
@@ -192,11 +195,11 @@ func (f *FlinkConnector) GetJobMetrics(jobID string) (map[string]interface{}, er
 		return nil, err
 	}
 	defer resp.Body.Close()
-	
+
 	var metrics map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&metrics); err != nil {
 		return nil, err
 	}
-	
+
 	return metrics, nil
 }

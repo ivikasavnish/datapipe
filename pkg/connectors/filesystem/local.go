@@ -4,10 +4,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/ivikasavnish/datapipe/pkg/connectors"
 )
 
 type LocalFSConnector struct {
-	BaseConnector
+	connectors.BaseConnector
 	Config LocalFSConfig
 }
 
@@ -17,7 +19,7 @@ type LocalFSConfig struct {
 
 func NewLocalFSConnector(config LocalFSConfig) *LocalFSConnector {
 	return &LocalFSConnector{
-		BaseConnector: BaseConnector{
+		BaseConnector: connectors.BaseConnector{
 			Name:        "Local File System",
 			Description: "Local file system connector",
 			Version:     "1.0.0",
@@ -56,7 +58,7 @@ func (l *LocalFSConnector) GetConfig() interface{} {
 func (l *LocalFSConnector) ListFiles(path string) ([]string, error) {
 	fullPath := filepath.Join(l.Config.BasePath, path)
 	var files []string
-	
+
 	err := filepath.Walk(fullPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -70,7 +72,7 @@ func (l *LocalFSConnector) ListFiles(path string) ([]string, error) {
 		}
 		return nil
 	})
-	
+
 	return files, err
 }
 
@@ -81,38 +83,38 @@ func (l *LocalFSConnector) ReadFile(path string) ([]byte, error) {
 
 func (l *LocalFSConnector) WriteFile(path string, data []byte) error {
 	fullPath := filepath.Join(l.Config.BasePath, path)
-	
+
 	// Ensure directory exists
 	dir := filepath.Dir(fullPath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
-	
+
 	return os.WriteFile(fullPath, data, 0644)
 }
 
 func (l *LocalFSConnector) CopyFile(src, dst string) error {
 	srcPath := filepath.Join(l.Config.BasePath, src)
 	dstPath := filepath.Join(l.Config.BasePath, dst)
-	
+
 	sourceFile, err := os.Open(srcPath)
 	if err != nil {
 		return err
 	}
 	defer sourceFile.Close()
-	
+
 	// Ensure destination directory exists
 	dstDir := filepath.Dir(dstPath)
 	if err := os.MkdirAll(dstDir, 0755); err != nil {
 		return err
 	}
-	
+
 	destFile, err := os.Create(dstPath)
 	if err != nil {
 		return err
 	}
 	defer destFile.Close()
-	
+
 	_, err = io.Copy(destFile, sourceFile)
 	return err
 }

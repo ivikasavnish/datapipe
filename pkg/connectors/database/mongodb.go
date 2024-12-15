@@ -2,12 +2,14 @@ package database
 
 import (
 	"context"
+
+	"github.com/ivikasavnish/datapipe/pkg/connectors"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type MongoDBConnector struct {
-	BaseConnector
+	connectors.BaseConnector
 	Config   MongoDBConfig
 	client   *mongo.Client
 	database *mongo.Database
@@ -22,7 +24,7 @@ type MongoDBConfig struct {
 
 func NewMongoDBConnector(config MongoDBConfig) *MongoDBConnector {
 	return &MongoDBConnector{
-		BaseConnector: BaseConnector{
+		BaseConnector: connectors.BaseConnector{
 			Name:        "MongoDB",
 			Description: "MongoDB database connector",
 			Version:     "1.0.0",
@@ -38,7 +40,7 @@ func (m *MongoDBConnector) Connect() error {
 	if err != nil {
 		return err
 	}
-	
+
 	m.client = client
 	m.database = client.Database(m.Config.Database)
 	return client.Ping(m.ctx, nil)

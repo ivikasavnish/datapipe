@@ -1,13 +1,16 @@
 package messaging
 
 import (
-	"github.com/go-redis/redis/v8"
 	"context"
+	"fmt"
+
+	"github.com/go-redis/redis/v8"
+	"github.com/ivikasavnish/datapipe/pkg/connectors"
 )
 
 // RedisConnector implements the Connector interface for Redis
 type RedisConnector struct {
-	BaseConnector
+	connectors.BaseConnector
 	Config RedisConfig
 	client *redis.Client
 	ctx    context.Context
@@ -22,7 +25,7 @@ type RedisConfig struct {
 
 func NewRedisConnector(config RedisConfig) *RedisConnector {
 	return &RedisConnector{
-		BaseConnector: BaseConnector{
+		BaseConnector: connectors.BaseConnector{
 			Name:        "Redis",
 			Description: "Redis messaging connector",
 			Version:     "1.0.0",
@@ -39,7 +42,7 @@ func (r *RedisConnector) Connect() error {
 		Password: r.Config.Password,
 		DB:       r.Config.DB,
 	})
-	
+
 	return r.client.Ping(r.ctx).Err()
 }
 

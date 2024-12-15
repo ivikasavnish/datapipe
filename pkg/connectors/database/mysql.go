@@ -2,12 +2,15 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
+
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/ivikasavnish/datapipe/pkg/connectors"
 )
 
 // MySQLConnector implements the Connector interface for MySQL databases
 type MySQLConnector struct {
-	BaseConnector
+	connectors.BaseConnector
 	Config MySQLConfig
 	db     *sql.DB
 }
@@ -22,7 +25,7 @@ type MySQLConfig struct {
 
 func NewMySQLConnector(config MySQLConfig) *MySQLConnector {
 	return &MySQLConnector{
-		BaseConnector: BaseConnector{
+		BaseConnector: connectors.BaseConnector{
 			Name:        "MySQL",
 			Description: "MySQL database connector",
 			Version:     "1.0.0",
@@ -40,12 +43,12 @@ func (m *MySQLConnector) Connect() error {
 		m.Config.Port,
 		m.Config.Database,
 	)
-	
+
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return err
 	}
-	
+
 	m.db = db
 	return db.Ping()
 }

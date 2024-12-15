@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ivikasavnish/datapipe/pkg/connectors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 )
 
 type GRPCConnector struct {
-	BaseConnector
+	connectors.BaseConnector
 	Config     GRPCConfig
 	connection *grpc.ClientConn
 	ctx        context.Context
@@ -28,7 +29,7 @@ type GRPCConfig struct {
 
 func NewGRPCConnector(config GRPCConfig) *GRPCConnector {
 	return &GRPCConnector{
-		BaseConnector: BaseConnector{
+		BaseConnector: connectors.BaseConnector{
 			Name:        "gRPC",
 			Description: "Generic gRPC connector",
 			Version:     "1.0.0",

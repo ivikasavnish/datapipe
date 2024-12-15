@@ -2,16 +2,19 @@ package api
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
-	"io"
 	"net/http"
+	"time"
+
+	"github.com/ivikasavnish/datapipe/pkg/connectors"
 )
 
 type RESTConnector struct {
-	BaseConnector
-	Config     RESTConfig
-	client     *http.Client
-	headers    map[string]string
+	connectors.BaseConnector
+	Config  RESTConfig
+	client  *http.Client
+	headers map[string]string
 }
 
 type RESTConfig struct {
@@ -27,7 +30,7 @@ type RESTConfig struct {
 
 func NewRESTConnector(config RESTConfig) *RESTConnector {
 	return &RESTConnector{
-		BaseConnector: BaseConnector{
+		BaseConnector: connectors.BaseConnector{
 			Name:        "REST API",
 			Description: "REST API connector",
 			Version:     "1.0.0",
@@ -42,15 +45,15 @@ func (r *RESTConnector) Connect() error {
 	r.client = &http.Client{
 		Timeout: time.Duration(r.Config.Timeout) * time.Second,
 	}
-	
+
 	// Set default headers
 	r.headers["Content-Type"] = "application/json"
-	
+
 	// Add custom headers
 	for k, v := range r.Config.Headers {
 		r.headers[k] = v
 	}
-	
+
 	// Set authentication
 	switch r.Config.AuthType {
 	case "basic":
@@ -61,7 +64,7 @@ func (r *RESTConnector) Connect() error {
 	case "api_key":
 		r.headers["X-API-Key"] = r.Config.APIKey
 	}
-	
+
 	return nil
 }
 
@@ -90,11 +93,11 @@ func (r *RESTConnector) Get(endpoint string) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	for k, v := range r.headers {
 		req.Header.Set(k, v)
 	}
-	
+
 	return r.client.Do(req)
 }
 
@@ -103,15 +106,15 @@ func (r *RESTConnector) Post(endpoint string, body interface{}) (*http.Response,
 	if err != nil {
 		return nil, err
 	}
-	
+
 	req, err := http.NewRequest("POST", r.Config.BaseURL+endpoint, bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return nil, err
 	}
-	
+
 	for k, v := range r.headers {
 		req.Header.Set(k, v)
 	}
-	
+
 	return r.client.Do(req)
 }

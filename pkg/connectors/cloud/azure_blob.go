@@ -2,16 +2,19 @@ package cloud
 
 import (
 	"context"
-	"github.com/Azure/azure-storage-blob-go/azblob"
-	"net/url"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/container"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/service"
+	"github.com/ivikasavnish/datapipe/pkg/connectors"
 )
 
 type AzureBlobConnector struct {
-	BaseConnector
-	Config     AzureBlobConfig
-	credential azblob.Credential
-	serviceURL azblob.ServiceURL
-	ctx        context.Context
+	connectors.BaseConnector
+	Config        AzureBlobConfig
+	credential    *azblob.SharedKeyCredential
+	serviceClient *azblob.Client
+	ctx           context.Context
 }
 
 type AzureBlobConfig struct {
@@ -23,7 +26,7 @@ type AzureBlobConfig struct {
 
 func NewAzureBlobConnector(config AzureBlobConfig) *AzureBlobConnector {
 	return &AzureBlobConnector{
-		BaseConnector: BaseConnector{
+		BaseConnector: connectors.BaseConnector{
 			Name:        "Azure Blob Storage",
 			Description: "Azure Blob Storage connector",
 			Version:     "1.0.0",
@@ -40,14 +43,12 @@ func (a *AzureBlobConnector) Connect() error {
 		return err
 	}
 
-	pipeline := azblob.NewPipeline(credential, azblob.PipelineOptions{})
-	
-	URL, _ := url.Parse(
-		fmt.Sprintf("https://%s.blob.%s/",
-			a.Config.AccountName,
-			a.Config.EndpointSuffix))
-	
-	a.serviceURL = azblob.NewServiceURL(*URL, pipeline)
+	serviceClient, err := azblob.NewClientWithSharedKeyCredential(a.Config.AccountName, credential, &azblob.ClientOptions{})
+	if err != nil {
+		return err
+	}
+
+	a.serviceClient = serviceClient
 	a.credential = credential
 	return nil
 }
@@ -72,35 +73,33 @@ func (a *AzureBlobConnector) GetConfig() interface{} {
 }
 
 // Additional Azure Blob-specific methods
-func (a *AzureBlobConnector) ListContainers() ([]azblob.ContainerItem, error) {
-	var containers []azblob.ContainerItem
-	
-	for marker := (azblob.Marker{}); marker.NotDone(); {
-		listContainer, err := a.serviceURL.ListContainersSegment(a.ctx, marker, azblob.ListContainersSegmentOptions{})
+func (a *AzureBlobConnector) ListContainers() ([]*service.ContainerItem, error) {
+	var containers []*service.ContainerItem
+
+	pager := a.serviceClient.NewListContainersPager(nil)
+	for pager.More() {
+		resp, err := pager.NextPage(a.ctx)
 		if err != nil {
 			return nil, err
 		}
-		
-		containers = append(containers, listContainer.ContainerItems...)
-		marker = listContainer.NextMarker
+		containers = append(containers, resp.ContainerItems...)
 	}
-	
+
 	return containers, nil
 }
 
-func (a *AzureBlobConnector) ListBlobs(prefix string) ([]azblob.BlobItem, error) {
-	containerURL := a.serviceURL.NewContainerURL(a.Config.ContainerName)
-	var blobs []azblob.BlobItem
-	
-	for marker := (azblob.Marker{}); marker.NotDone(); {
-		listBlob, err := containerURL.ListBlobsFlatSegment(a.ctx, marker, azblob.ListBlobsSegmentOptions{Prefix: prefix})
+func (a *AzureBlobConnector) ListBlobs(prefix string) ([]*container.BlobItem, error) {
+	containerClient := a.serviceClient.ServiceClient().NewContainerClient(a.Config.ContainerName)
+
+	pager := containerClient.NewListBlobsFlatPager(&container.ListBlobsFlatOptions{Prefix: &prefix})
+	var blobs []*container.BlobItem
+	for pager.More() {
+		resp, err := pager.NextPage(a.ctx)
 		if err != nil {
 			return nil, err
 		}
-		
-		blobs = append(blobs, listBlob.Segment.BlobItems...)
-		marker = listBlob.NextMarker
+		blobs = append(blobs, resp.Segment.BlobItems...)
 	}
-	
+
 	return blobs, nil
 }

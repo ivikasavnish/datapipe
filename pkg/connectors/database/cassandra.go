@@ -2,10 +2,11 @@ package database
 
 import (
 	"github.com/gocql/gocql"
+	"github.com/ivikasavnish/datapipe/pkg/connectors"
 )
 
 type CassandraConnector struct {
-	BaseConnector
+	connectors.BaseConnector
 	Config  CassandraConfig
 	session *gocql.Session
 }
@@ -19,7 +20,7 @@ type CassandraConfig struct {
 
 func NewCassandraConnector(config CassandraConfig) *CassandraConnector {
 	return &CassandraConnector{
-		BaseConnector: BaseConnector{
+		BaseConnector: connectors.BaseConnector{
 			Name:        "Cassandra",
 			Description: "Apache Cassandra connector",
 			Version:     "1.0.0",
@@ -36,12 +37,12 @@ func (c *CassandraConnector) Connect() error {
 		Username: c.Config.Username,
 		Password: c.Config.Password,
 	}
-	
+
 	session, err := cluster.CreateSession()
 	if err != nil {
 		return err
 	}
-	
+
 	c.session = session
 	return nil
 }

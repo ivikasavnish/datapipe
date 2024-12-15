@@ -1,11 +1,12 @@
 package messaging
 
 import (
+	"github.com/ivikasavnish/datapipe/pkg/connectors"
 	"github.com/streadway/amqp"
 )
 
 type RabbitMQConnector struct {
-	BaseConnector
+	connectors.BaseConnector
 	Config RabbitMQConfig
 	conn   *amqp.Connection
 	ch     *amqp.Channel
@@ -21,7 +22,7 @@ type RabbitMQConfig struct {
 
 func NewRabbitMQConnector(config RabbitMQConfig) *RabbitMQConnector {
 	return &RabbitMQConnector{
-		BaseConnector: BaseConnector{
+		BaseConnector: connectors.BaseConnector{
 			Name:        "RabbitMQ",
 			Description: "RabbitMQ messaging connector",
 			Version:     "1.0.0",
@@ -36,12 +37,12 @@ func (r *RabbitMQConnector) Connect() error {
 	if err != nil {
 		return err
 	}
-	
+
 	ch, err := conn.Channel()
 	if err != nil {
 		return err
 	}
-	
+
 	err = ch.ExchangeDeclare(
 		r.Config.Exchange,
 		r.Config.ExchangeType,
@@ -54,7 +55,7 @@ func (r *RabbitMQConnector) Connect() error {
 	if err != nil {
 		return err
 	}
-	
+
 	_, err = ch.QueueDeclare(
 		r.Config.Queue,
 		true,  // durable
@@ -66,7 +67,7 @@ func (r *RabbitMQConnector) Connect() error {
 	if err != nil {
 		return err
 	}
-	
+
 	r.conn = conn
 	r.ch = ch
 	return nil

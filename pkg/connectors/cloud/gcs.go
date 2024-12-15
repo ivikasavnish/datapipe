@@ -2,26 +2,29 @@ package cloud
 
 import (
 	"context"
+
 	"cloud.google.com/go/storage"
+	"github.com/ivikasavnish/datapipe/pkg/connectors"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
 
 type GCSConnector struct {
-	BaseConnector
-	Config  GCSConfig
-	client  *storage.Client
-	ctx     context.Context
+	connectors.BaseConnector
+	Config GCSConfig
+	client *storage.Client
+	ctx    context.Context
 }
 
 type GCSConfig struct {
-	ProjectID      string
-	Bucket         string
+	ProjectID       string
+	Bucket          string
 	CredentialsFile string
 }
 
 func NewGCSConnector(config GCSConfig) *GCSConnector {
 	return &GCSConnector{
-		BaseConnector: BaseConnector{
+		BaseConnector: connectors.BaseConnector{
 			Name:        "Google Cloud Storage",
 			Description: "Google Cloud Storage connector",
 			Version:     "1.0.0",

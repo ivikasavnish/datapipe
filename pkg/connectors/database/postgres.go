@@ -2,12 +2,15 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
+
+	"github.com/ivikasavnish/datapipe/pkg/connectors"
 	_ "github.com/lib/pq"
 )
 
 // PostgresConnector implements the Connector interface for PostgreSQL databases
 type PostgresConnector struct {
-	BaseConnector
+	connectors.BaseConnector
 	Config PostgresConfig
 	db     *sql.DB
 }
@@ -23,7 +26,7 @@ type PostgresConfig struct {
 
 func NewPostgresConnector(config PostgresConfig) *PostgresConnector {
 	return &PostgresConnector{
-		BaseConnector: BaseConnector{
+		BaseConnector: connectors.BaseConnector{
 			Name:        "PostgreSQL",
 			Description: "PostgreSQL database connector",
 			Version:     "1.0.0",
@@ -42,12 +45,12 @@ func (p *PostgresConnector) Connect() error {
 		p.Config.Database,
 		p.Config.SSLMode,
 	)
-	
+
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return err
 	}
-	
+
 	p.db = db
 	return db.Ping()
 }

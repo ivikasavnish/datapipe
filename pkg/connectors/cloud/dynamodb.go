@@ -2,13 +2,15 @@ package cloud
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/ivikasavnish/datapipe/pkg/connectors"
 )
 
 type DynamoDBConnector struct {
-	BaseConnector
+	connectors.BaseConnector
 	Config DynamoDBConfig
 	client *dynamodb.DynamoDB
 }
@@ -23,7 +25,7 @@ type DynamoDBConfig struct {
 
 func NewDynamoDBConnector(config DynamoDBConfig) *DynamoDBConnector {
 	return &DynamoDBConnector{
-		BaseConnector: BaseConnector{
+		BaseConnector: connectors.BaseConnector{
 			Name:        "AWS DynamoDB",
 			Description: "Amazon DynamoDB connector",
 			Version:     "1.0.0",
@@ -46,14 +48,14 @@ func (d *DynamoDBConnector) Connect() error {
 	if err != nil {
 		return err
 	}
-	
+
 	d.client = dynamodb.New(sess)
-	
+
 	// Verify table exists
 	input := &dynamodb.DescribeTableInput{
 		TableName: aws.String(d.Config.TableName),
 	}
-	
+
 	_, err = d.client.DescribeTable(input)
 	return err
 }
@@ -81,12 +83,12 @@ func (d *DynamoDBConnector) PutItem(item interface{}) error {
 	if err != nil {
 		return err
 	}
-	
+
 	input := &dynamodb.PutItemInput{
 		Item:      av,
 		TableName: aws.String(d.Config.TableName),
 	}
-	
+
 	_, err = d.client.PutItem(input)
 	return err
 }
@@ -96,21 +98,21 @@ func (d *DynamoDBConnector) GetItem(key map[string]interface{}) (map[string]inte
 	if err != nil {
 		return nil, err
 	}
-	
+
 	input := &dynamodb.GetItemInput{
 		Key:       av,
 		TableName: aws.String(d.Config.TableName),
 	}
-	
+
 	result, err := d.client.GetItem(input)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if result.Item == nil {
 		return nil, nil
 	}
-	
+
 	var item map[string]interface{}
 	err = dynamodbattribute.UnmarshalMap(result.Item, &item)
 	return item, err
@@ -121,18 +123,18 @@ func (d *DynamoDBConnector) Query(keyCondition string, expressionAttrValues map[
 	if err != nil {
 		return nil, err
 	}
-	
+
 	input := &dynamodb.QueryInput{
 		TableName:                 aws.String(d.Config.TableName),
 		KeyConditionExpression:    aws.String(keyCondition),
 		ExpressionAttributeValues: values,
 	}
-	
+
 	result, err := d.client.Query(input)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var items []map[string]interface{}
 	err = dynamodbattribute.UnmarshalListOfMaps(result.Items, &items)
 	return items, err
@@ -143,18 +145,18 @@ func (d *DynamoDBConnector) Scan(filterExpression string, expressionAttrValues m
 	if err != nil {
 		return nil, err
 	}
-	
+
 	input := &dynamodb.ScanInput{
 		TableName:                 aws.String(d.Config.TableName),
 		FilterExpression:          aws.String(filterExpression),
 		ExpressionAttributeValues: values,
 	}
-	
+
 	result, err := d.client.Scan(input)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var items []map[string]interface{}
 	err = dynamodbattribute.UnmarshalListOfMaps(result.Items, &items)
 	return items, err
@@ -165,12 +167,12 @@ func (d *DynamoDBConnector) DeleteItem(key map[string]interface{}) error {
 	if err != nil {
 		return err
 	}
-	
+
 	input := &dynamodb.DeleteItemInput{
 		Key:       av,
 		TableName: aws.String(d.Config.TableName),
 	}
-	
+
 	_, err = d.client.DeleteItem(input)
 	return err
 }
@@ -180,19 +182,19 @@ func (d *DynamoDBConnector) UpdateItem(key map[string]interface{}, updateExpress
 	if err != nil {
 		return err
 	}
-	
+
 	values, err := dynamodbattribute.MarshalMap(expressionAttrValues)
 	if err != nil {
 		return err
 	}
-	
+
 	input := &dynamodb.UpdateItemInput{
 		Key:                       keyAV,
 		TableName:                 aws.String(d.Config.TableName),
 		UpdateExpression:          aws.String(updateExpression),
 		ExpressionAttributeValues: values,
 	}
-	
+
 	_, err = d.client.UpdateItem(input)
 	return err
 }
