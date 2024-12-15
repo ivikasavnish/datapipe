@@ -76,5 +76,5 @@ func main() {
 	// Print metrics
 	metrics := p.GetMetrics()
 	log.Printf("Pipeline processed %d records with %d errors", 
-		metrics.recordsProcessed, metrics.errors)
+		metrics.RecordsProcessed, metrics.Errors)
 }

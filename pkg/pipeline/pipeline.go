@@ -43,11 +43,11 @@ type Pipeline struct {
 
 // Metrics holds pipeline metrics
 type Metrics struct {
-	mu               sync.RWMutex
-	recordsProcessed int64
-	errors           int64
-	startTime        int64
-	endTime         int64
+	Mu               sync.RWMutex
+	RecordsProcessed int64
+	Errors           int64
+	StartTime        int64
+	EndTime          int64
 }
 
 // NewPipeline creates a new data pipeline
@@ -101,7 +101,7 @@ func (p *Pipeline) Stop() error {
 
 // GetMetrics returns pipeline metrics
 func (p *Pipeline) GetMetrics() Metrics {
-	p.metrics.mu.RLock()
-	defer p.metrics.mu.RUnlock()
+	p.metrics.Mu.RLock()
+	defer p.metrics.Mu.RUnlock()
 	return *p.metrics
 }
